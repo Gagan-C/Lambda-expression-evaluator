@@ -1,0 +1,106 @@
+/**
+ *
+ * Copyright (c) 1996-1997 Sun Microsystems, Inc.
+ *
+ * Use of this file and the system it is part of is constrained by the
+ * file COPYRIGHT in the root directory of this system.
+ *
+ */
+
+options {
+  MULTI=true; // an option for JJTree
+              // set to build a multi mode tree
+              // (with different types of nodes)
+}
+
+PARSER_BEGIN(Prog03)
+
+class Prog03 {
+  public static void main(String args[]) {
+    System.out.println(">>> Lambda Expression Evaluator <<<");
+    System.out.println("Enter an applied Lambda expression:");
+//  User input
+    Prog03 t = new Prog03(System.in);
+    try {
+      ASTStart n = t.Start();
+      n.dump("");
+    } catch (Exception e) {
+      System.out.println("Oops.");
+      System.out.println(e.getMessage());
+      e.printStackTrace();
+    }
+  }
+}
+
+PARSER_END(Prog03)
+
+
+SKIP :
+{
+  " "
+| "\t"
+| "\n"
+| "\r"
+| <"//" (~["\n","\r"])* ("\n"|"\r"|"\r\n")>
+| <"/*" (~["*"])* "*" (~["/"] (~["*"])* "*")* "/">
+}
+
+TOKEN : /* LITERALS */
+{
+  < INTEGER_LITERAL:
+        <DECIMAL_LITERAL> (["l","L"])?
+      | <HEX_LITERAL> (["l","L"])?
+      | <OCTAL_LITERAL> (["l","L"])?
+  >
+|
+  < #DECIMAL_LITERAL: ["1"-"9"] (["0"-"9"])* >
+|
+  < #HEX_LITERAL: "0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+ >
+|
+  < #OCTAL_LITERAL: "0" (["0"-"7"])* >
+}
+
+TOKEN : /* IDENTIFIERS */
+{
+  < IDENTIFIER: <LETTER> (<LETTER>|<DIGIT>)* >
+|
+  < #LETTER: ["_","a"-"z","A"-"Z"] >
+|
+  < #DIGIT: ["0"-"9"] >
+}
+
+TOKEN : /* LAMBDA */
+{
+  <LAMBDA : "L"
+}
+
+ASTStart Start() : {}
+{
+  Expression()
+  { return jjtThis; }
+}
+
+
+void Expression() #void : {}
+{
+  Integer() | "+" | "-" | "*" | "/" |  MyID()
+         |( "(" Expression() (Expression())* ")" ) #appl(2)
+	 |("(" "L" (MyID())+ "." (Expression())+ ")")#lamb(2)   
+}
+
+
+void MyID() :
+{
+  Token t;
+}
+{
+  t=<IDENTIFIER>
+  {
+    jjtThis.setName(t.image);
+  }
+}
+
+void Integer() : {}
+{
+  <INTEGER_LITERAL>
+}
